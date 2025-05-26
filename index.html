@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee & Department Dashboard (Mock Data)</title>
+  <style>
+    :root {
+      --primary: #4a90e2;
+      --secondary: #50e3c2;
+      --bg: #f5f7fa;
+      --card-bg: #ffffff;
+      --text-dark: #333333;
+      --border-radius: 0.5rem;
+      --transition: 0.3s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-dark); padding: 1rem; }
+    h1 { text-align: center; margin-bottom: 1rem; color: var(--primary); }
+    .container { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .card { background: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform var(--transition); }
+    .card:hover { transform: translateY(-4px); }
+    .card h2 { margin-bottom: 0.5rem; font-size: 1.25rem; }
+    .list { list-style: none; max-height: 300px; overflow-y: auto; margin-bottom: 0.5rem; }
+    .list li { padding: 0.5rem; border-bottom: 1px solid #eee; }
+    .list li:last-child { border-bottom: none; }
+    form, .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
+    form input, form button, form select, .controls select, .controls button { padding: 0.5rem; border: 1px solid #ccc; border-radius: var(--border-radius); font-size: 1rem; }
+    form button, .controls button { background: var(--primary); color: #fff; border: none; cursor: pointer; transition: background var(--transition); }
+    form button:hover, .controls button:hover { background: var(--secondary); }
+    .controls select { background: #fff; cursor: pointer; }
+    .toast {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: var(--primary);
+      color: #fff;
+      padding: 0.75rem 1rem;
+      border-radius: var(--border-radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <h1>Employee & Department Dashboard (Mock Data)</h1>
+  <div class="container">
+    <div id="departments" class="card">
+      <h2>Departments</h2>
+      <ul class="list" id="deptList"></ul>
+      <form id="addDeptForm">
+        <input type="text" id="deptName" placeholder="Department Name" required />
+        <button type="submit">Add Department</button>
+      </form>
+    </div>
+    <div id="employees" class="card">
+      <h2>Employees</h2>
+      <div class="controls">
+        <select id="filterDeptSelect"><option value="">All Departments</option></select>
+        <button id="filterBtn">Show</button>
+        <button id="showAllEmpBtn">Show All Employees</button>
+      </div>
+      <ul class="list" id="empList"></ul>
+      <form id="addEmpForm">
+        <input type="text" id="empName" placeholder="Name" required />
+        <input type="number" id="empAge" placeholder="Age" required />
+        <input type="text" id="empPosition" placeholder="Position" required />
+        <select id="empDeptId" required></select>
+        <button type="submit">Add Employee</button>
+      </form>
+    </div>
+  </div>
+  <div id="toast" class="toast">Message</div>
+  <script>
+    let mockDepartments = [{ id:1,name:'HR'},{ id:2,name:'Engineering'},{ id:3,name:'Sales'}];
+    let mockEmployees = [{id:1,departmentId:1,name:'Alice Johnson',age:30,position:'Recruiter'},{id:2,departmentId:2,name:'Bob Smith',age:28,position:'Backend Engineer'},{id:3,departmentId:2,name:'Carol White',age:35,position:'Frontend Engineer'},{id:4,departmentId:3,name:'David Brown',age:40,position:'Sales Manager'}];
+    let nextDeptId = mockDepartments.length+1, nextEmpId = mockEmployees.length+1;
+    const deptList=document.getElementById('deptList'), empList=document.getElementById('empList');
+    const deptSelectForm=document.getElementById('empDeptId'), filterDeptSelect=document.getElementById('filterDeptSelect');
+    const filterBtn=document.getElementById('filterBtn'), showAllEmpBtn=document.getElementById('showAllEmpBtn');
+    const toastEl=document.getElementById('toast');
+    function showToast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'),2000);}    
+    function loadDepartments(){ deptList.innerHTML=''; deptSelectForm.innerHTML='<option value="" disabled selected>Select Dept</option>'; filterDeptSelect.innerHTML='<option value="">All Departments</option>'; mockDepartments.forEach(d=>{ const li=document.createElement('li'); li.textContent=d.name; li.dataset.id=d.id; li.addEventListener('click',()=>loadEmployeesByDept(d.id)); deptList.appendChild(li); const optForm=document.createElement('option'); optForm.value=d.id; optForm.textContent=d.name; deptSelectForm.appendChild(optForm); const optFilter=document.createElement('option'); optFilter.value=d.id; optFilter.textContent=d.name; filterDeptSelect.appendChild(optFilter); }); }
+    function renderEmployeeList(list){ empList.innerHTML=''; list.forEach(e=>{ const li=document.createElement('li'); li.textContent=`${e.name} (${e.position}, Age: ${e.age}) [Dept: ${getDeptName(e.departmentId)}]`; empList.appendChild(li); }); }
+    function getDeptName(id){const d=mockDepartments.find(x=>x.id===id);return d?d.name:'Unknown';}
+    function loadEmployeesByDept(id){ renderEmployeeList(mockEmployees.filter(e=>e.departmentId===id)); }
+    function loadAllEmployees(){ renderEmployeeList(mockEmployees); }
+    filterBtn.addEventListener('click',()=>{ const v=filterDeptSelect.value; v?loadEmployeesByDept(parseInt(v,10)):loadAllEmployees(); });
+    showAllEmpBtn.addEventListener('click',loadAllEmployees);
+    document.getElementById('addDeptForm').addEventListener('submit',e=>{ e.preventDefault(); const name=document.getElementById('deptName').value.trim(); if(name){ mockDepartments.push({id:nextDeptId++,name}); document.getElementById('deptName').value=''; loadDepartments(); showToast('Department added'); }});
+    document.getElementById('addEmpForm').addEventListener('submit',e=>{ e.preventDefault(); const name=document.getElementById('empName').value.trim(); const age=parseInt(document.getElementById('empAge').value,10); const position=document.getElementById('empPosition').value.trim(); const dId=parseInt(deptSelectForm.value,10); if(name&&position&&dId){ mockEmployees.push({id:nextEmpId++,departmentId:dId,name,age,position}); e.target.reset(); loadDepartments(); loadAllEmployees(); showToast('Employee added'); }});
+    loadDepartments(); loadAllEmployees();
+  </script>
+</body>
+</html>
